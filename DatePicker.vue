@@ -3,7 +3,12 @@
     import moment from 'moment';
 
     defineProps([
-        'class'
+        'class',
+        'modelValue'
+    ]);
+
+    const emit = defineEmits([
+        'update:modelValue'
     ]);
 
     let showCalendar = ref(false);
@@ -36,6 +41,8 @@
         selectedYear.value = showingYear.value;
         formattedSelectedDate.value = moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-MM-DD').format('YYYY-MM-DD');
         readableSelectedDate.value = moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-MM-DD').format('dddd, D MMMM YYYY');
+
+        emit('update:modelValue', formattedSelectedDate.value);
 
         showCalendar.value = false;
     }

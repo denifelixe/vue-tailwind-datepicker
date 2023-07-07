@@ -1,7 +1,9 @@
 <script setup>
     import DatePicker from './DatePicker.vue';
+
+    let selectedFromDate = ref();
 </script>
 
 <template>
-    <DatePicker>Button Text</DatePicker>
+    <DatePicker v-model="selectedFromDate">Button Text</DatePicker>
 </template>
