@@ -1,10 +1,13 @@
 <script setup>
-    import { ref, onMounted, watch } from 'vue';
+    import { ref, onMounted, watch, computed } from 'vue';
     import moment from 'moment';
 
-    defineProps([
+    const props = defineProps([
         'class',
-        'modelValue'
+        'modelValue',
+
+        'disabledDatesBefore',
+        'disabledDatesAfter',
     ]);
 
     const emit = defineEmits([
@@ -12,7 +15,7 @@
     ]);
 
     let showCalendar = ref(false);
-
+    
     const now = moment();
     const currentDate = now.date();
     const currentMonth = now.month() + 1;
@@ -33,19 +36,39 @@
     let selectedDate = ref(0);
     let selectedMonth = ref(0);
     let selectedYear = ref(0);
-    let formattedSelectedDate = ref('');
-    let readableSelectedDate = ref('Choose Date...');
+    let formattedSelectedDate = computed(() => {
+        if (selectedDate.value && selectedMonth.value && selectedYear.value) {
+
+            //if selected date is before disabled dates before the reset selected date
+            if (
+                (props.disabledDatesBefore && moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-M-D').isBefore(props.disabledDatesBefore)) 
+                || 
+                (props.disabledDatesAfter && moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-M-D').isAfter(props.disabledDatesAfter))
+            ) {
+                selectedDate.value = 0;
+                selectedMonth.value = 0;
+                selectedYear.value = 0;
+                return null;
+            }
+
+            return moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-M-D').format('YYYY-MM-DD');
+
+        } else {
+            return null;
+        }
+    })
+    let readableSelectedDate = computed(() => {
+        return formattedSelectedDate.value ? moment(formattedSelectedDate.value, 'YYYY-MM-DD').format('dddd, D MMMM YYYY') : 'Choose a date...';
+    });
     function selectDate(date) {
         selectedDate.value = date;
         selectedMonth.value = showingMonth.value;
         selectedYear.value = showingYear.value;
-        formattedSelectedDate.value = moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-MM-DD').format('YYYY-MM-DD');
-        readableSelectedDate.value = moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-MM-DD').format('dddd, D MMMM YYYY');
 
         emit('update:modelValue', formattedSelectedDate.value);
 
         showCalendar.value = false;
-    }
+    };
 
     let daysInPreviousShowingMonthArray = ref([]);
     let daysInShowingMonthArray = ref([]);
@@ -172,13 +195,17 @@
             </div>
             <div class="mt-2 grid grid-cols-7 text-sm">
                 <div class="py-2" v-for="date in daysInPreviousShowingMonthArray" :key="date">
-                    <button @click="previousMonth(); selectDate(date)" type="button" class="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-200"
+                    <button @click="previousMonth(); selectDate(date)" type="button" class="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-gray-400"
                         :class="{ 
-                            'text-indigo-500' : date == currentDate && (showingMonth == ((currentMonth + 1) != 13 ? (currentMonth + 1) : 1)) && (showingYear == ((currentMonth + 1) == 13 ? currentYear + 1 : currentYear)) ,
+                            'relative cursor-not-allowed pointer-events-none' : disabledDatesBefore && moment(((showingMonth - 1) == 0 ? (showingYear - 1) : showingYear) + '-' + ((showingMonth - 1) == 0 ? 12 : (showingMonth - 1)) + '-' + date, 'YYYY-M-D').isBefore(disabledDatesBefore),
+                            'relative cursor-not-allowed pointer-events-none' : disabledDatesAfter && moment(((showingMonth - 1) == 0 ? (showingYear - 1) : showingYear) + '-' + ((showingMonth - 1) == 0 ? 12 : (showingMonth - 1)) + '-' + date, 'YYYY-M-D').isAfter(disabledDatesAfter),
+                            'text-indigo-500 hover:bg-gray-200' : date == currentDate && (showingMonth == ((currentMonth + 1) != 13 ? (currentMonth + 1) : 1)) && (showingYear == ((currentMonth + 1) == 13 ? currentYear + 1 : currentYear)) ,
                             'bg-gray-200 hover:bg-gray-200' : date == selectedDate && (showingMonth == ((selectedMonth + 1) != 13 ? (selectedMonth + 1) : 1)) && (showingYear == ((selectedMonth + 1) == 13 ? selectedYear + 1 : selectedYear)) 
                         }"
                     >
                         <time>{{ date }}</time>
+                        <i v-if="disabledDatesBefore && moment(((showingMonth - 1) == 0 ? (showingYear - 1) : showingYear) + '-' + ((showingMonth - 1) == 0 ? 12 : (showingMonth - 1)) + '-' + date, 'YYYY-M-D').isBefore(disabledDatesBefore)" class="fa-sharp fa-light fa-ban absolute text-3xl text-gray-300"></i>
+                        <i v-if="disabledDatesAfter && moment(((showingMonth - 1) == 0 ? (showingYear - 1) : showingYear) + '-' + ((showingMonth - 1) == 0 ? 12 : (showingMonth - 1)) + '-' + date, 'YYYY-M-D').isAfter(disabledDatesAfter)" class="fa-sharp fa-light fa-ban absolute text-3xl text-gray-300"></i>
                     </button>
                 </div>
                 <!-- Disabled Date Grey -->
@@ -199,25 +226,33 @@
 
 
                 <div class="py-2" v-for="date in daysInShowingMonthArray" :key="date">
-                    <button type="button" @click="selectDate(date)" class="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-gray-900 hover:bg-gray-200" 
+                    <button type="button" @click="selectDate(date)" class="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-gray-900" 
                         :class="{ 
-                            'font-semibold text-indigo-600' : date == currentDate && showingMonth == currentMonth && showingYear == currentYear,
+                            'relative cursor-not-allowed pointer-events-none' : disabledDatesBefore && moment(showingYear + '-' + showingMonth + '-' + date, 'YYYY-M-D').isBefore(disabledDatesBefore),
+                            'relative cursor-not-allowed pointer-events-none' : disabledDatesAfter && moment(showingYear + '-' + showingMonth + '-' + date, 'YYYY-M-D').isAfter(disabledDatesAfter),
+                            'font-semibold text-indigo-600 hover:bg-gray-200' : date == currentDate && showingMonth == currentMonth && showingYear == currentYear,
                             'bg-indigo-600 hover:bg-indigo-600 text-white' : date == selectedDate && showingMonth == selectedMonth && showingYear == selectedYear 
                         }"
 
                     >
                         <time>{{ date }}</time>
+                        <i v-if="disabledDatesBefore && moment(showingYear + '-' + showingMonth + '-' + date, 'YYYY-M-D').isBefore(disabledDatesBefore)" class="fa-sharp fa-light fa-ban absolute text-3xl text-gray-400"></i>
+                        <i v-if="disabledDatesAfter && moment(showingYear + '-' + showingMonth + '-' + date, 'YYYY-M-D').isAfter(disabledDatesAfter)" class="fa-sharp fa-light fa-ban absolute text-3xl text-gray-400"></i>
                     </button>
                 </div>
 
                 <div class="py-2" v-for="date in daysInNextShowingMonthArray" :key="date">
-                    <button type="button" @click="nextMonth(); selectDate(date)" class="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-200"
+                    <button type="button" @click="nextMonth(); selectDate(date)" class="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-gray-400"
                         :class="{ 
-                            'text-indigo-500' : date == currentDate && (showingMonth == ((currentMonth - 1) != 0 ? (currentMonth - 1) : 12)) && (showingYear == ((currentMonth - 1) == 0 ? currentYear - 1 : currentYear)),
+                            'relative cursor-not-allowed pointer-events-none' : disabledDatesBefore && moment(((showingMonth + 1) == 13 ? showingYear + 1 : showingYear) + '-' + ((showingMonth + 1) == 13 ? 1 : (showingMonth + 1)) + '-' + date, 'YYYY-M-D').isBefore(disabledDatesBefore),
+                            'relative cursor-not-allowed pointer-events-none' : disabledDatesAfter && moment(((showingMonth + 1) == 13 ? showingYear + 1 : showingYear) + '-' + ((showingMonth + 1) == 13 ? 1 : (showingMonth + 1)) + '-' + date, 'YYYY-M-D').isAfter(disabledDatesAfter),
+                            'text-indigo-500 hover:bg-gray-200' : date == currentDate && (showingMonth == ((currentMonth - 1) != 0 ? (currentMonth - 1) : 12)) && (showingYear == ((currentMonth - 1) == 0 ? currentYear - 1 : currentYear)),
                             'bg-gray-200 hover:bg-gray-200' : date == selectedDate && (showingMonth == ((selectedMonth - 1) != 0 ? (selectedMonth - 1) : 12)) && (showingYear == ((selectedMonth - 1) == 0 ? selectedYear - 1 : selectedYear))
                         }"
                     >
                         <time>{{ date }}</time>
+                        <i v-if="disabledDatesBefore && moment(((showingMonth + 1) == 13 ? showingYear + 1 : showingYear) + '-' + ((showingMonth + 1) == 13 ? 1 : (showingMonth + 1)) + '-' + date, 'YYYY-M-D').isBefore(disabledDatesBefore)" class="fa-sharp fa-light fa-ban absolute text-3xl text-gray-300"></i>
+                        <i v-if="disabledDatesAfter && moment(((showingMonth + 1) == 13 ? showingYear + 1 : showingYear) + '-' + ((showingMonth + 1) == 13 ? 1 : (showingMonth + 1)) + '-' + date, 'YYYY-M-D').isAfter(disabledDatesAfter)" class="fa-sharp fa-light fa-ban absolute text-3xl text-gray-300"></i>
                     </button>
                 </div>
 
