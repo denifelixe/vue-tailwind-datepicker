@@ -49,6 +49,9 @@
                 selectedDate.value = 0;
                 selectedMonth.value = 0;
                 selectedYear.value = 0;
+
+                emit('update:modelValue', null);
+
                 return null;
             }
 
