@@ -8,6 +8,7 @@
 
         'disabledDatesBefore',
         'disabledDatesAfter',
+        'showCalendarOrientation', //top, bottom
     ]);
 
     const emit = defineEmits([
@@ -144,7 +145,12 @@
 
         <button type="button" @click="showCalendar = true" class="inline-block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 mr-1"><slot></slot></button> <span>{{ readableSelectedDate  }}</span>
 
-        <div class="w-96 max-w-sm p-5 bg-white border rounded-lg ring-1 ring-gray-200 absolute bottom-12 z-50" v-show="showCalendar">
+        <div class="w-96 max-w-sm p-5 bg-white border rounded-lg ring-1 ring-gray-200 z-50" 
+            :class="{ 
+                'absolute bottom-12' : showCalendarOrientation == 'top',
+                'absolute top-12' : !showCalendarOrientation || showCalendarOrientation == 'bottom',
+            }" 
+        v-show="showCalendar">
             <div class="flex items-center justify-center">
                 <div class="flex text-sm font-semibold text-gray-900 items-center justify-center">
                     <div class="inline-block mr-2">
@@ -208,22 +214,6 @@
                         <i v-if="disabledDatesAfter && moment(((showingMonth - 1) == 0 ? (showingYear - 1) : showingYear) + '-' + ((showingMonth - 1) == 0 ? 12 : (showingMonth - 1)) + '-' + date, 'YYYY-M-D').isAfter(disabledDatesAfter)" class="fa-sharp fa-light fa-ban absolute text-3xl text-gray-300"></i>
                     </button>
                 </div>
-                <!-- Disabled Date Grey -->
-                <!-- <div class="py-2">
-                    <button type="button" class="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-gray-400 relative cursor-not-allowed">
-                        <time datetime="2021-12-29">29</time>
-                        <i class="fa-sharp fa-light fa-ban absolute text-3xl text-gray-300"></i>
-                    </button>
-                </div> -->
-
-                <!-- Diabled Date -->
-                <!-- <div class="py-2">
-                    <button type="button" class="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-gray-900 relative cursor-not-allowed">
-                        <time datetime="2022-01-01">1</time>
-                        <i class="fa-sharp fa-light fa-ban absolute text-3xl text-gray-400"></i>
-                    </button>
-                </div> -->
-
 
                 <div class="py-2" v-for="date in daysInShowingMonthArray" :key="date">
                     <button type="button" @click="selectDate(date)" class="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-gray-900" 
