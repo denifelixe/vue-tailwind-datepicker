@@ -6,6 +6,8 @@
         'class',
         'modelValue',
 
+        'yearsDropdownFrom',
+        'yearsDropdownTo',
         'disabledDatesBefore',
         'disabledDatesAfter',
         'showCalendarOrientation', //top, bottom
@@ -16,129 +18,141 @@
     ]);
 
     let showCalendar = ref(false);
-    
-    const now = moment();
-    const currentDate = now.date();
-    const currentMonth = now.month() + 1;
-    const currentYear = now.year();
 
-    let showingMonth = ref(currentMonth);
-    watch(showingMonth, (newValue, oldValue) => {
-        setCalendar(newValue, showingYear.value);
-    });
+    // Set Calendar Function
+        let daysInPreviousShowingMonthArray = ref([]);
+        let daysInShowingMonthArray = ref([]);
+        let daysInNextShowingMonthArray = ref([]);
+        function daysInMonth(month, year) {
+            return moment(year + '-' + month, 'YYYY-MM').daysInMonth();
+        };
+        function firstDayOfMonth(month, year) {
+            return moment(year + '-' + month, 'YYYY-MM').startOf('month').isoWeekday();
+        };
+        function setCalendar(month, year) {
+            
+            let firstDayOfShowingMonth = firstDayOfMonth(month, year);
+            let daysInShowingMonth = daysInMonth(month, year);
+            let daysInPreviousShowingMonth = daysInMonth((month - 1) ? (month - 1) : 12, year);
 
-    let showingYear = ref(currentYear);
-    //years is 100 years before and 20 years after current year sort by greatest number
-    let years = ref(Array.from({length: 120}, (v, k) => currentYear - 100 + k).sort((a, b) => b - a));
-    watch(showingYear, (newValue, oldValue) => {
-        setCalendar(showingMonth.value, newValue);
-    });
+            daysInPreviousShowingMonthArray.value = [];
+            daysInShowingMonthArray.value = [];
+            daysInNextShowingMonthArray.value = [];
 
-    let selectedDate = ref(0);
-    let selectedMonth = ref(0);
-    let selectedYear = ref(0);
-    let formattedSelectedDate = computed(() => {
-        if (selectedDate.value && selectedMonth.value && selectedYear.value) {
+            for (let i = 1; i < firstDayOfShowingMonth; i++) {
+                daysInPreviousShowingMonthArray.value.push(daysInPreviousShowingMonth - (firstDayOfShowingMonth - 1) + i);
+            }
 
-            //if selected date is before disabled dates before the reset selected date
-            if (
-                (props.disabledDatesBefore && moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-M-D').isBefore(props.disabledDatesBefore)) 
-                || 
-                (props.disabledDatesAfter && moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-M-D').isAfter(props.disabledDatesAfter))
-            ) {
-                selectedDate.value = 0;
-                selectedMonth.value = 0;
-                selectedYear.value = 0;
+            for (let i = 1; i <= daysInShowingMonth; i++) {
+                daysInShowingMonthArray.value.push(i);
+            }
 
-                emit('update:modelValue', null);
+            for (let i = 1; i <= 42 - (daysInPreviousShowingMonthArray.value.length + daysInShowingMonthArray.value.length); i++) {
+                daysInNextShowingMonthArray.value.push(i);
+            }
 
+        };
+        function nextMonth() {
+            if (showingMonth.value == 12) {
+                showingMonth.value = 1;
+                showingYear.value++;
+            } else {
+                showingMonth.value++;
+            }
+            setCalendar(showingMonth.value, showingYear.value);
+        }
+        function previousMonth() {
+            if (showingMonth.value == 1) {
+                showingMonth.value = 12;
+                showingYear.value--;
+            } else {
+                showingMonth.value--;
+            }
+            setCalendar(showingMonth.value, showingYear.value);
+        }
+    //
+
+
+    // First calendar init
+        const now = moment();
+        const currentDate = now.date();
+        const currentMonth = now.month() + 1;
+        const currentYear = now.year();
+
+        let selectedDate = ref(props.modelValue ? moment(props.modelValue, 'YYYY-MM-DD').date() : 0);
+        let selectedMonth = ref(props.modelValue ? moment(props.modelValue, 'YYYY-MM-DD').month() + 1 : 0);
+        let selectedYear = ref(props.modelValue ? moment(props.modelValue, 'YYYY-MM-DD').year() : 0);
+        let formattedSelectedDate = computed(() => {
+            if (selectedDate.value && selectedMonth.value && selectedYear.value) {
+
+                //if selected date is before disabled dates before the reset selected date
+                if (
+                    (props.disabledDatesBefore && moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-M-D').isBefore(props.disabledDatesBefore)) 
+                    || 
+                    (props.disabledDatesAfter && moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-M-D').isAfter(props.disabledDatesAfter))
+                ) {
+                    selectedDate.value = 0;
+                    selectedMonth.value = 0;
+                    selectedYear.value = 0;
+
+                    emit('update:modelValue', null);
+
+                    return null;
+                }
+
+                return moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-M-D').format('YYYY-MM-DD');
+
+            } else {
                 return null;
             }
-
-            return moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-M-D').format('YYYY-MM-DD');
-
-        } else {
-            return null;
-        }
-    })
-    let readableSelectedDate = computed(() => {
-        return formattedSelectedDate.value ? moment(formattedSelectedDate.value, 'YYYY-MM-DD').format('dddd, D MMMM YYYY') : 'Choose a date...';
-    });
-    function selectDate(date) {
-        selectedDate.value = date;
-        selectedMonth.value = showingMonth.value;
-        selectedYear.value = showingYear.value;
-
-        emit('update:modelValue', formattedSelectedDate.value);
-
-        showCalendar.value = false;
-    };
-
-    let daysInPreviousShowingMonthArray = ref([]);
-    let daysInShowingMonthArray = ref([]);
-    let daysInNextShowingMonthArray = ref([]);
-
-    function daysInMonth(month, year) {
-        return moment(year + '-' + month, 'YYYY-MM').daysInMonth();
-    };
-    function firstDayOfMonth(month, year) {
-        return moment(year + '-' + month, 'YYYY-MM').startOf('month').isoWeekday();
-    };
-
-    function setCalendar(month, year) {
-        
-        let firstDayOfShowingMonth = firstDayOfMonth(month, year);
-        let daysInShowingMonth = daysInMonth(month, year);
-        let daysInPreviousShowingMonth = daysInMonth((month - 1) ? (month - 1) : 12, year);
-
-        daysInPreviousShowingMonthArray.value = [];
-        daysInShowingMonthArray.value = [];
-        daysInNextShowingMonthArray.value = [];
-
-        for (let i = 1; i < firstDayOfShowingMonth; i++) {
-            daysInPreviousShowingMonthArray.value.push(daysInPreviousShowingMonth - (firstDayOfShowingMonth - 1) + i);
-        }
-
-        for (let i = 1; i <= daysInShowingMonth; i++) {
-            daysInShowingMonthArray.value.push(i);
-        }
-
-        for (let i = 1; i <= 42 - (daysInPreviousShowingMonthArray.value.length + daysInShowingMonthArray.value.length); i++) {
-            daysInNextShowingMonthArray.value.push(i);
-        }
-
-    };
-
-    function nextMonth() {
-        if (showingMonth.value == 12) {
-            showingMonth.value = 1;
-            showingYear.value++;
-        } else {
-            showingMonth.value++;
-        }
-        setCalendar(showingMonth.value, showingYear.value);
-    }
-
-    function previousMonth() {
-        if (showingMonth.value == 1) {
-            showingMonth.value = 12;
-            showingYear.value--;
-        } else {
-            showingMonth.value--;
-        }
-        setCalendar(showingMonth.value, showingYear.value);
-    }
-
-    setCalendar(showingMonth.value, showingYear.value);
-
-    const calendarElement = ref(null);
-    onMounted(() => {
-        document.addEventListener('click', function(event) {
-            if (!calendarElement.value.contains(event.target)) {
-                showCalendar.value = false;
-            }
+        })
+        let readableSelectedDate = computed(() => {
+            return formattedSelectedDate.value ? moment(formattedSelectedDate.value, 'YYYY-MM-DD').format('dddd, D MMMM YYYY') : 'Choose a date...';
         });
-    });
+
+        let showingMonth = ref(selectedMonth ? selectedMonth.value : currentMonth);
+        watch(showingMonth, (newValue, oldValue) => {
+            setCalendar(newValue, showingYear.value);
+        });
+        let showingYear = ref(selectedYear ? selectedYear.value : currentYear);
+        watch(showingYear, (newValue, oldValue) => {
+            setCalendar(showingMonth.value, newValue);
+        });
+        // years array from props.yearsDropdownFrom to props.yearsDropdownTo. If one of them is not set then use 100 years before current year and 20 years after current year
+        let yearsDropdownFrom = ref(props.yearsDropdownFrom ? props.yearsDropdownFrom : currentYear - 100);
+        let yearsDropdownTo = ref(props.yearsDropdownTo ? props.yearsDropdownTo : currentYear + 20);
+        let yearsDropdownArray = ref([]);
+        for (let i = yearsDropdownFrom.value; i <= yearsDropdownTo.value; i++) {
+            yearsDropdownArray.value.push(i);
+        }
+
+        setCalendar(showingMonth.value, showingYear.value);
+    //
+
+
+    // Select date
+        function selectDate(date) {
+            selectedDate.value = date;
+            selectedMonth.value = showingMonth.value;
+            selectedYear.value = showingYear.value;
+
+            emit('update:modelValue', formattedSelectedDate.value);
+
+            showCalendar.value = false;
+        };
+    //
+
+
+    // Close calendar when click outside
+        const calendarElement = ref(null);
+        onMounted(() => {
+            document.addEventListener('click', function(event) {
+                if (!calendarElement.value.contains(event.target)) {
+                    showCalendar.value = false;
+                }
+            });
+        });
+    //
 </script>
 
 
@@ -174,7 +188,7 @@
                     </div>
                     <div class="inline-block mr-2">
                         <select id="selected-month" v-model="showingYear" class="rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6">
-                            <option v-for="year in years" :value="year" :key="year">{{ year }}</option>
+                            <option v-for="year in yearsDropdownArray" :value="year" :key="year">{{ year }}</option>
                         </select>
                     </div>
                 </div>
