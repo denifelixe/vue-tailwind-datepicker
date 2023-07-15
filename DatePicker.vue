@@ -4,12 +4,12 @@
 
     const props = defineProps([
         'class',
-        'modelValue',
+        'modelValue', // YYYY-MM-DD e.g. 2021-01-21
 
-        'yearsDropdownFrom',
-        'yearsDropdownTo',
-        'disabledDatesBefore',
-        'disabledDatesAfter',
+        'yearsDropdownFrom', // YYYY e.g. 1990
+        'yearsDropdownTo', // YYYY e.g. 2021
+        'disabledDatesBefore', // YYYY-MM-DD e.g. 2021-01-21
+        'disabledDatesAfter', // YYYY-MM-DD e.g. 2022-01-21
         'showCalendarOrientation', //top, bottom
     ]);
 
@@ -19,7 +19,7 @@
 
     let showCalendar = ref(false);
 
-    // Set Calendar Function
+    // Set calendar
         let daysInPreviousShowingMonthArray = ref([]);
         let daysInShowingMonthArray = ref([]);
         let daysInNextShowingMonthArray = ref([]);
