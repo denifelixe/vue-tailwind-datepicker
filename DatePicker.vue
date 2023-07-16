@@ -158,6 +158,7 @@
 
 <template>
     <!-- This component is from TailwindUI -->
+    <!-- https://tailwindui.com/components/application-ui/data-display/calendars#component-b59d3a98c34e60d43c8972caa08618a5 -->
     <div class="relative inline-block" ref="calendarElement" :class="class">
 
         <button type="button" @click="showCalendar = true" class="inline-block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 mr-1"><slot></slot></button> <span>{{ readableSelectedDate  }}</span>
