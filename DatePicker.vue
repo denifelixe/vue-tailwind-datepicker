@@ -79,9 +79,9 @@
         const currentMonth = now.month() + 1;
         const currentYear = now.year();
 
-        let selectedDate = ref(props.modelValue ? moment(props.modelValue, 'YYYY-MM-DD').date() : 0);
-        let selectedMonth = ref(props.modelValue ? moment(props.modelValue, 'YYYY-MM-DD').month() + 1 : 0);
-        let selectedYear = ref(props.modelValue ? moment(props.modelValue, 'YYYY-MM-DD').year() : 0);
+        let selectedDate = ref();
+        let selectedMonth = ref();
+        let selectedYear = ref();
         let formattedSelectedDate = computed(() => {
             if (selectedDate.value && selectedMonth.value && selectedYear.value) {
 
@@ -110,14 +110,14 @@
             return formattedSelectedDate.value ? moment(formattedSelectedDate.value, 'YYYY-MM-DD').format('dddd, D MMMM YYYY') : 'Choose a date...';
         });
 
-        let showingMonth = ref(selectedMonth ? selectedMonth.value : currentMonth);
-        watch(showingMonth, (newValue, oldValue) => {
-            setCalendar(newValue, showingYear.value);
-        });
-        let showingYear = ref(selectedYear ? selectedYear.value : currentYear);
-        watch(showingYear, (newValue, oldValue) => {
-            setCalendar(showingMonth.value, newValue);
-        });
+        let showingMonth = ref();
+        function setShowingMonth() {
+            setCalendar(showingMonth.value, showingYear.value);
+        }
+        let showingYear = ref();
+        function setShowingYear() {
+            setCalendar(showingMonth.value, showingYear.value);
+        }
         // years array from props.yearsDropdownFrom to props.yearsDropdownTo. If one of them is not set then use 100 years before current year and 20 years after current year
         let yearsDropdownFrom = ref(props.yearsDropdownFrom ? props.yearsDropdownFrom : currentYear - 100);
         let yearsDropdownTo = ref(props.yearsDropdownTo ? props.yearsDropdownTo : currentYear + 20);
@@ -126,7 +126,17 @@
             yearsDropdownArray.value.push(i);
         }
 
-        setCalendar(showingMonth.value, showingYear.value);
+        //init calendar and watch props.modelValue if it is changed
+        watch(() => props.modelValue, (newValue, oldValue) => {
+            selectedDate.value = newValue ? moment(newValue, 'YYYY-MM-DD').date() : 0;
+            selectedMonth.value = newValue ? moment(newValue, 'YYYY-MM-DD').month() + 1 : 0;
+            selectedYear.value = newValue ? moment(newValue, 'YYYY-MM-DD').year() : 0;
+
+            showingMonth.value = selectedMonth.value ? selectedMonth.value : currentMonth;
+            showingYear.value = selectedYear.value ? selectedYear.value : currentYear;
+
+            setCalendar(showingMonth.value, showingYear.value);
+        }, { immediate: true });
     //
 
 
@@ -172,7 +182,7 @@
             <div class="flex items-center justify-center">
                 <div class="flex text-sm font-semibold text-gray-900 items-center justify-center">
                     <div class="inline-block mr-2">
-                        <select id="selected-month" v-model="showingMonth" class="rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <select id="selected-month" v-model="showingMonth" @change="setShowingMonth" class="rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6">
                             <option value="1">January</option>
                             <option value="2">February</option>
                             <option value="3">March</option>
@@ -188,7 +198,7 @@
                         </select>
                     </div>
                     <div class="inline-block mr-2">
-                        <select id="selected-month" v-model="showingYear" class="rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                        <select id="selected-month" v-model="showingYear" @change="setShowingYear" class="rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6">
                             <option v-for="year in yearsDropdownArray" :value="year" :key="year">{{ year }}</option>
                         </select>
                     </div>
