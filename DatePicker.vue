@@ -4,7 +4,7 @@
 
     const props = defineProps([
         'class',
-        'modelValue', // YYYY-MM-DD e.g. 2021-01-21
+        'modelValue', // YYYY-MM-DD e.g. 2021-01-21 or 2021-01-21T00:00:00.000+07:00
 
         'yearsDropdownFrom', // YYYY e.g. 1990
         'yearsDropdownTo', // YYYY e.g. 2021
