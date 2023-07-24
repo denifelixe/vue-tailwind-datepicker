@@ -17,7 +17,7 @@ class doSomethingController extends Controller
         $selectedFromDate = $request->selectedFromDate ?? now()->subDays(31)->startOfDay()->toISOString();
         $selectedToDate = $request->selectedToDate ?? now()->startOfDay()->toISOString();
 
-        $somethings = Something::whereBetween('created_at', [Carbon::create($request->selectedFromDate)->toISOString(), Carbon::create($request->selectedToDate)->toISOString()])->get();
+        $somethings = Something::whereBetween('created_at', [Carbon::create($request->selectedFromDate)->toISOString(), Carbon::create($request->selectedToDate)->addDay()->subSecond()->toISOString()])->get();
 
         return [
             'selectedFromDate' => $selectedFromDate,
