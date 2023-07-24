@@ -100,14 +100,14 @@
                     return null;
                 }
 
-                return moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-M-D').format('YYYY-MM-DD');
+                return moment(selectedYear.value + '-' + selectedMonth.value + '-' + selectedDate.value, 'YYYY-M-D').toISOString(true);
 
             } else {
                 return null;
             }
         })
         let readableSelectedDate = computed(() => {
-            return formattedSelectedDate.value ? moment(formattedSelectedDate.value, 'YYYY-MM-DD').format('dddd, D MMMM YYYY') : 'Choose a date...';
+            return formattedSelectedDate.value ? moment(formattedSelectedDate.value).format('dddd, D MMMM YYYY') : 'Choose a date...';
         });
 
         let showingMonth = ref();
